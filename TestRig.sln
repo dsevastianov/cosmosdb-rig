@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TestRig", "TestRig\TestRig.fsproj", "{3714D58F-3276-4458-A324-13BC8D22E163}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DDOS", "DDOS\DDOS.fsproj", "{E9903F6F-61C1-4BF2-A176-A71B7435D50B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3714D58F-3276-4458-A324-13BC8D22E163}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3714D58F-3276-4458-A324-13BC8D22E163}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3714D58F-3276-4458-A324-13BC8D22E163}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3714D58F-3276-4458-A324-13BC8D22E163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9903F6F-61C1-4BF2-A176-A71B7435D50B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9903F6F-61C1-4BF2-A176-A71B7435D50B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9903F6F-61C1-4BF2-A176-A71B7435D50B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9903F6F-61C1-4BF2-A176-A71B7435D50B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {46A6102C-D0FC-45FA-B66E-EC66D2366919}
+	EndGlobalSection
+EndGlobal
