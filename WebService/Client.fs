@@ -5,10 +5,10 @@ open Microsoft.Azure.Documents
 open Microsoft.Azure.Documents.Client
 open Microsoft.Azure.Documents.Linq
 
-let Account = "https://beast-prod.documents.azure.com:443/"
-let Key = ""
-let dbName = "access-layer"
-let collectionName = "product-projection"
+let Account = "<account>"
+let Key = "<key>"
+let dbName = "<db>"
+let collectionName = "<collection>"
 let mutable LOG_QUERIES = false
 
 let logQueries (feed : FeedResponse<_>) = 
@@ -75,6 +75,7 @@ let runQuery feedOptions (query: string) = async {
 }
 
 let testData count = async {
+    //This call is needed because TOP cross-partition query returns results from only one partition range
   let! pkrs = client.ReadPartitionKeyRangeFeedAsync collectionUri |> Async.AwaitTask
   let countPerPartition = count / pkrs.Count + 1
   let! ids = 
@@ -88,6 +89,8 @@ let testData count = async {
                 MaxBufferedItemCount = count,
                 PartitionKeyRangeId = pkr.Id
                 )
+      /// STARTSWITH is to try to get better distribution of keys from each partition range, experiments showed
+      /// that data fetched with just TOP query produces much lower latency than real-life examples with well distributed keys
       countPerPartition |> sprintf "SELECT top %d c.id FROM c WHERE STARTSWITH(c.id, '00')" |> runQuery feedOptions 
       )
     |> Async.Parallel
@@ -111,20 +114,3 @@ let mget docIds =
         |> String.concat ","
       String.Concat [| "select * from c where c.id in ("; ids; ")" |]
     runQuery feedOptions query
-
-let naiveMget docIDs = async {
-  let! results = 
-    docIDs 
-    |> Seq.map (fun docId -> 
-       client.ReadDocumentAsync(UriFactory.CreateDocumentUri(dbName, collectionName, docId), RequestOptions (PartitionKey = PartitionKey docId))
-       |> Async.AwaitTask
-       )
-    |> Async.Parallel
-  return 
-    results
-    |> Array.map(fun r -> 
-      let id = r.Resource.Id
-      if LOG_QUERIES then printfn "%s - %s" id r.RequestDiagnosticsString
-      id
-      ), 0
-}

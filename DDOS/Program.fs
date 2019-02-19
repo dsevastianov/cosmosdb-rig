@@ -1,16 +1,5 @@
 ﻿open System
-open System.Net
 open System.Net.Http
-
-
-ServicePointManager.DefaultConnectionLimit <- 2000
-ServicePointManager.Expect100Continue <- false
-ServicePointManager.UseNagleAlgorithm <- false
-ServicePointManager.SecurityProtocol <- SecurityProtocolType.Tls12 ||| SecurityProtocolType.Tls11 ||| SecurityProtocolType.Tls
-ServicePointManager.EnableDnsRoundRobin <- true
-ServicePointManager.DnsRefreshTimeout <- 60*60*1000
-
-Threading.ThreadPool.SetMinThreads (512, 512) |> ignore
 
 let testEndpoint = "http://localhost:9000"
 
@@ -34,19 +23,14 @@ let main _ =
   //  |> Seq.collect(fun s -> s.Replace("\"", "").Replace("[", "").Split(','))
   //  |> Array.ofSeq
   printfn "Loading test data..."
-  let ids = (send "test_data" "1000" |> Async.RunSynchronously).Split(',')
+  let ids = (send "test_data" "5000" |> Async.RunSynchronously).Split(',')
   
-  let randomIds () = 
-    let rec loop l = 
-        if Set.count l < BATCH then
-            Set.add (rand.Next(ids.Length - 1)) l |> loop 
-        else
-            l
-    loop Set.empty 
+  //Inject some random ids to mimic 404s
+  let ids = Array.append ids [| for _ in 1..100 -> System.Guid.NewGuid().ToString("N") |]
 
-  let getLine () = randomIds () |> Seq.map (fun x -> ids.[x]) |> String.concat ","
+  let getLine () = Seq.init BATCH (fun _ -> ids.[rand.Next(ids.Length - 1)])|> String.concat ","
   
-  let tests = [2, 10000] 
+  let tests = [5, 10000] 
   
   printfn "Starting tests..."
   async {

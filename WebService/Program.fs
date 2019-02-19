@@ -37,19 +37,16 @@ let service (req : HttpRequestMessage ) = async {
   let globalStart = start
   let! body = req.Content.ReadAsStringAsync() |> Async.AwaitTask
   let reading = (int)(DateTime.UtcNow - start).TotalMilliseconds
-  System.Threading.Interlocked.Increment queue |> ignore
+  Interlocked.Increment queue |> ignore
   let requestedIds = body.Split ',' 
   match requestedIds with
   | [||] -> return new HttpResponseMessage(HttpStatusCode.BadRequest)
   | skus -> 
       let! (docs, metrics) = Client.mget skus
       let notFound = requestedIds.Length - docs.Length
-      if notFound > 0 && docs.Length > 0 then
-        docs |> Seq.map(fun d -> d.Id) |> Set.ofSeq |> Set.difference (requestedIds |> Set.ofArray)
-        |> printfn "NotFound: %d\nRequested: %A\nMissing: %A" notFound requestedIds
       let gl = (int)(DateTime.UtcNow - globalStart).TotalMilliseconds
       System.Threading.Interlocked.Decrement queue |> ignore
-      if not (stats.TryAdd [| reading; metrics; gl |]) then
+      if not (stats.TryAdd [| reading; metrics; gl; notFound |]) then
         printfn "Discarding results, stats queue is full"
       return new HttpResponseMessage(HttpStatusCode.OK)
 } 
@@ -66,16 +63,18 @@ let report _ =
     let cpu, io = System.Threading.ThreadPool.GetAvailableThreads ()
     //let parseRequest = data |> Array.map (fun x -> x.[0])
     //let mgetCall = data |> Array.map (fun x -> x.[1])
+    let notFound = data |> List.map (fun x -> x.[3]) |> List.sum 
     let total = data |> List.map (fun x -> x.[2]) |> Array.ofList |> Array.sort
     let p99, avg = 
       if total.Length = 0 then
         0,0
       else
         total.[total.Length - 1 - (total.Length / 99)], (Seq.sum total) / total.Length  
-    printfn "%A Queue: %d Completed: %d Latency: [avg: %d p99: %d] CPU: %d IO: %d" 
+    printfn "%A Queue: %d Completed: %d NotFound: %d Latency: [avg: %d p99: %d] CPU: %d IO: %d" 
       DateTime.Now.TimeOfDay 
       !queue
       total.Length
+      notFound
       avg
       p99
       (maxCpu - cpu) 
@@ -86,7 +85,7 @@ let report _ =
 [<EntryPoint>]
 let main args =
   Client.LOG_QUERIES <- (args |> Seq.contains "debug")
-  let timer = new Timer(TimerCallback(report), null, 1000, 1000)  
+  let timer = new Timer(TimerCallback(report), null, 10000, 10000)  
   [
     host "http://*:9000/req/" service 
     host "http://*:9000/test_data/" getTestData 
